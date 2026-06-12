@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  farm-app:
+    build: .
+    container_name: farm-management-system
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_PATH=/app/data/farm.db
+      - ROBOFLOW_API_KEY=${ROBOFLOW_API_KEY:-J0bn4BnNYHwpiVS6RlKV}
+    volumes:
+      # Mount current directory for hot reload (development)
+      - .:/app
+      # Exclude node_modules from being overwritten by host
+      - /app/node_modules
+      # Persistent database storage
+      - farm-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/controls"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - farm-network
+    # Allow for Ctrl+C to stop the container gracefully
+    stdin_open: true
+    tty: true
+
+volumes:
+  farm-data:
+    driver: local
+
+networks:
+  farm-network:
+    driver: bridge
